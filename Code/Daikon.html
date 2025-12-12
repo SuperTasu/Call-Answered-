@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大阪工業大学 入試過去問 & 解説ツール</title>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --accent-color: #d63384; /* 解説PDF用 */
+            --ai-color: #6f42c1;    /* AI解説用 */
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            transition: max-width 0.3s;
+        }
+
+        /* PC用レイアウト */
+        @media (min-width: 900px) {
+            .container {
+                max-width: 1100px;
+            }
+            .layout-grid {
+                display: grid;
+                grid-template-columns: 400px 1fr;
+                gap: 40px;
+                align-items: start;
+            }
+            .right-panel {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 12px;
+                height: 100%;
+                min-height: 500px;
+            }
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        /* お知らせエリア */
+        .news-box {
+            background-color: #e3f2fd;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .news-item {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .news-date {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .section { margin-bottom: 20px; }
+
+        label.section-title {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.1em;
+            text-align: center;
+            box-sizing: border-box;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        .grid-options, .grid-subjects {
+            display: grid;
+            gap: 8px;
+        }
+        .grid-options { grid-template-columns: repeat(2, 1fr); }
+        .grid-subjects { grid-template-columns: repeat(3, 1fr); }
+
+        input[type="radio"] { display: none; }
+
+        .option-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 5px;
+            background-color: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            text-align: center;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="radio"]:checked + .option-btn {
+            background-color: #e3f2fd;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,86,179,0.2);
+        }
+
+        /* 科目別カラー */
+        input[value="su1"]:checked + .option-btn { border-color: #007bff; color: #007bff; background-color: #e7f1ff; }
+        input[value="ko"]:checked + .option-btn { border-color: #dc3545; color: #dc3545; background-color: #ffe8ea; }
+        input[value="ei"]:checked + .option-btn { border-color: #fd7e14; color: #fd7e14; background-color: #fff0e6; }
+        input[value="bu"]:checked + .option-btn { border-color: #28a745; color: #28a745; background-color: #e6f9ea; }
+        input[value="ka"]:checked + .option-btn { border-color: #6f42c1; color: #6f42c1; background-color: #f3ebff; }
+        input[value="it"]:checked + .option-btn { border-color: #17a2b8; color: #17a2b8; background-color: #e0faff; }
+
+        .switch-container {
+            display: flex;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .switch-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px 2px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        
+        input[name="type"]:checked + .switch-option {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        input[value="com"]:checked + .switch-option { color: var(--accent-color); background-color: #fff0f6; }
+        input[value="ai"]:checked + .switch-option { color: var(--ai-color); background-color: #f3ebff; }
+
+        button.main-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,86,179,0.3);
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        button.main-btn:hover { background-color: #004494; }
+        button.main-btn:disabled { background-color: #cccccc; cursor: not-allowed; box-shadow: none; }
+
+        body.mode-com button.main-btn { background-color: var(--accent-color); }
+        body.mode-com button.main-btn:hover { background-color: #a82363; }
+        
+        body.mode-ai button.main-btn { background-color: var(--ai-color); }
+        body.mode-ai button.main-btn:hover { background-color: #523091; }
+
+        .preview-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #333;
+            color: #00ff00;
+            font-family: monospace;
+            border-radius: 8px;
+            font-size: 0.85em;
+            word-break: break-all;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        .error-msg { color: #ff6b6b; font-weight: bold; }
+
+        /* Stock List Styles */
+        .stock-toggle-btn {
+            background: none;
+            border: none;
+            color: #666;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 0.9em;
+            width: 100%;
+            text-align: center;
+        }
+        .stock-list-container {
+            display: none;
+            margin-top: 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        @media (min-width: 900px) {
+            .stock-list-container {
+                display: block !important;
+                margin-top: 0;
+                border: none;
+                background: none;
+                padding: 0;
+            }
+            .stock-toggle-btn { display: none; }
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .stock-table th {
+            text-align: left;
+            border-bottom: 2px solid #ccc;
+            padding: 8px 5px;
+            color: #555;
+            font-size: 0.85em;
+        }
+        .stock-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        /* 種類バッジ */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            color: white;
+            display: inline-block;
+        }
+        .badge.pdf { background-color: var(--accent-color); }
+        .badge.ai { background-color: var(--ai-color); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 入試過去問 & 解説ツール</h2>
+
+    <!-- お知らせエリア -->
+    <div class="news-box">
+        <span style="font-weight:bold; color:#0056b3; display:block; margin-bottom:5px;">🔔 更新情報</span>
+        <div class="news-item">
+            <span class="news-date">2025/11/15</span>
+            <span>2024年度の <span class="badge pdf">解説PDF</span> を追加しました</span>
+        </div>
+        <div class="news-item">
+            <span class="news-date">2025/11/10</span>
+            <span>2024年度の <span class="badge ai">AI解説リンク</span> を追加しました</span>
+        </div>
+    </div>
+
+    <!-- レイアウト分割 (PC用) -->
+    <div class="layout-grid">
+        
+        <!-- 左パネル: 選択エリア -->
+        <div class="left-panel">
+            <!-- 年度 -->
+            <div class="section">
+                <label class="section-title">実施年度</label>
+                <select id="year" onchange="updateState()">
+                    <option value="2025">2025年度</option>
+                    <option value="2024" selected>2024年度</option>
+                    <option value="2023">2023年度</option>
+                    <option value="2022">2022年度</option>
+                    <option value="2021">2021年度</option>
+                    <option value="2020">2020年度</option>
+                    <option value="2019">2019年度</option>
+                    <option value="2018">2018年度</option>
+                    <option value="2017">2017年度</option>
+                </select>
+            </div>
+
+            <!-- 日程 -->
+            <div class="section">
+                <label class="section-title">日程</label>
+                <div class="grid-options">
+                    <label>
+                        <input type="radio" name="schedule" value="1" checked onchange="updateState()">
+                        <div class="option-btn">A日程 1日目</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="schedule" value="2" onchange="updateState()">
+                        <div class="option-btn">A日程 2日目</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="schedule" value="b" onchange="updateState()">
+                        <div class="option-btn">B日程</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="schedule" value="d" onchange="updateState()">
+                        <div class="option-btn">D日程</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 教科 -->
+            <div class="section">
+                <label class="section-title">教科</label>
+                <div class="grid-subjects">
+                    <label>
+                        <input type="radio" name="subject" value="su1" checked onchange="updateState()">
+                        <div class="option-btn">数学</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="ko" onchange="updateState()">
+                        <div class="option-btn">国語</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="ei" onchange="updateState()">
+                        <div class="option-btn">英語</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="bu" onchange="updateState()">
+                        <div class="option-btn">物理</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="ka" onchange="updateState()">
+                        <div class="option-btn">化学</div>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="it" onchange="updateState()">
+                        <div class="option-btn">情報</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 表示タイプ -->
+            <div class="section">
+                <label class="section-title">表示タイプ</label>
+                <div class="switch-container">
+                    <label style="flex:1">
+                        <input type="radio" name="type" value="" checked onchange="updateState()">
+                        <div class="switch-option">問題</div>
+                    </label>
+                    <label style="flex:1">
+                        <input type="radio" name="type" value="_ans" onchange="updateState()">
+                        <div class="switch-option">解答</div>
+                    </label>
+                    <label style="flex:1">
+                        <input type="radio" name="type" value="com" onchange="updateState()">
+                        <div class="switch-option">解説 ✨</div>
+                    </label>
+                    <label style="flex:1">
+                        <input type="radio" name="type" value="ai" onchange="updateState()">
+                        <div class="switch-option">AI解説🤖</div>
+                    </label>
+                </div>
+            </div>
+
+            <button id="mainBtn" class="main-btn" onclick="executeAction()">PDFを開く 🚀</button>
+            
+            <button class="stock-toggle-btn" onclick="toggleStockList()">📦 入荷リストを見る</button>
+        </div>
+
+        <!-- 右パネル -->
+        <div class="right-panel">
+            
+            <!-- プレビュー -->
+            <div class="preview-area" id="previewArea">
+                <span id="filePreview">loading...</span>
+            </div>
+
+            <!-- 解説入荷リスト -->
+            <div id="stockList" class="stock-list-container">
+                <h4 style="margin-top:0; color:#555; border-bottom:1px solid #ccc; padding-bottom:5px;">
+                    📦 解説コンテンツ一覧
+                </h4>
+                <p style="font-size:0.8em; color:#666; margin-bottom:10px;">
+                    ※問題・解答は公式サイトに全年度分あります。<br>
+                    ※下記は登録済みの「解説」リストです。
+                </p>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>年度</th>
+                            <th>日程</th>
+                            <th>教科</th>
+                            <th>種類</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody">
+                        <!-- JSで生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // =================================================================
+    // ▼▼▼ リスト編集エリア ▼▼▼
+    // ここにデータを追加するだけで、リンク機能と入荷リストに反映されます。
+    // IDの書き方: "年度_日程_教科" (例: 2024_1_su1)
+    // 日程: 1(A1), 2(A2), b(B日程), d(D日程)
+    // 教科: su1(数), ko(国), ei(英), bu(物), ka(化), it(情)
+    // =================================================================
+
+    // 【1】通常の解説PDF (PDFファイルへの直リンクなど)
+    const commentaryDb = {
+        "2024_1_su1": "https://answeri.wordpress.com/wp-content/uploads/2025/11/2024e5a4a7e998aae5b7a5e6a5ade5a4a7e5ada6-e695b0e5ada6-e8a7a3e7ad94-e697bae69687e7a4be-.pdf",
+        "2024_1_bu":  "https://answeri.wordpress.com/wp-content/uploads/2025/11/2024e5a4a7e998aae5b7a5e6a5ade5a4a7e5ada6-e789a9e79086-e8a7a3e7ad94-e697bae69687e7a4be-.pdf",
+        "2025_1_su1": "https://answeri.wordpress.com/wp-content/uploads/2025/11/2025e5a4a7e998aae5b7a5e6a5ade5a4a7e5ada6-e695b0e5ada6-e8a7a3e7ad94-e697bae69687e7a4be.pdf",
+        "2025_1_bu":  "https://answeri.wordpress.com/wp-content/uploads/2025/11/2025e5a4a7e998aae5b7a5e6a5ade5a4a7e5ada6-e789a9e79086-e8a7a3e7ad94-e697bae69687e7a4be-.pdf"
+    };
+
+    // 【2】AI解説リンク (AIが解説しているWebページやNotionへのリンク)
+    const aiExplanationDb = {
+        "2024_1_su1": "https://example.com/ai-explanation/2024-math", // サンプルURL
+        "2024_1_bu":  "https://example.com/ai-explanation/2024-phys", // サンプルURL
+    };
+
+    // ▲▲▲ 編集エリアここまで ▲▲▲
+    // =================================================================
+
+    const scheduleNames = { "1": "A日程 1日目", "2": "A日程 2日目", "b": "B日程", "d": "D日程" };
+    const subjectNames = { "su1": "数学", "ko": "国語", "ei": "英語", "bu": "物理", "ka": "化学", "it": "情報" };
+
+    function getSelectionData() {
+        return {
+            year: document.getElementById('year').value,
+            schedule: document.querySelector('input[name="schedule"]:checked').value,
+            subject: document.querySelector('input[name="subject"]:checked').value,
+            type: document.querySelector('input[name="type"]:checked').value
+        };
+    }
+
+    function getUrlInfo() {
+        const { year, schedule, subject, type } = getSelectionData();
+        const key = `${year}_${schedule}_${subject}`;
+        
+        // AI解説モード
+        if (type === 'ai') {
+            if (aiExplanationDb[key]) {
+                return { url: aiExplanationDb[key], valid: true, label: "AI解説ページへ移動 🤖" };
+            } else {
+                return { url: "", valid: false, label: "この年度・教科のAI解説はまだありません。" };
+            }
+        }
+        
+        // 解説モード
+        if (type === 'com') {
+            if (commentaryDb[key]) {
+                return { url: commentaryDb[key], valid: true, label: "解説PDFへ移動 📖" };
+            } else {
+                return { url: "", valid: false, label: "この年度の解説PDFは未登録です。" };
+            }
+        }
+
+        // 通常（問題・解答）モード
+        const schedulePrefix = "ipa"; 
+        const fileName = `${year}${schedulePrefix}${schedule}_${subject}${type}.pdf`;
+        const url = `https://www.oit.ac.jp/admission/result/pdf/exam/${year}/${fileName}`;
+
+        return { url, valid: true, label: `公式ファイル: ${fileName}` };
+    }
+
+    function updateState() {
+        const info = getUrlInfo();
+        const data = getSelectionData();
+        
+        const previewEl = document.getElementById('filePreview');
+        const btn = document.getElementById('mainBtn');
+        const stockList = document.getElementById('stockList');
+
+        document.body.classList.remove('mode-com', 'mode-ai');
+        
+        // スマホ画面でリストを隠す制御（PCはCSSで常時表示）
+        if(window.innerWidth < 900) {
+            stockList.style.display = 'none'; 
+        }
+
+        if (data.type === 'com') {
+            document.body.classList.add('mode-com');
+        } else if (data.type === 'ai') {
+            document.body.classList.add('mode-ai');
+        }
+
+        if (info.valid) {
+            previewEl.innerHTML = info.label;
+            previewEl.classList.remove('error-msg');
+            btn.disabled = false;
+            
+            if (data.type === 'com') {
+                btn.textContent = "解説PDFを開く 📖";
+            } else if (data.type === 'ai') {
+                btn.textContent = "AI解説を開く 🤖";
+            } else if (data.type === '_ans') {
+                btn.textContent = "解答PDFを開く ✅";
+            } else {
+                btn.textContent = "問題PDFを開く 🚀";
+            }
+        } else {
+            previewEl.innerHTML = `<span class="error-msg">⚠️ ${info.label}</span>`;
+            btn.disabled = true;
+            btn.textContent = "リンクなし 🚫";
+        }
+    }
+
+    function executeAction() {
+        const info = getUrlInfo();
+        if (info.valid) {
+            window.open(info.url, '_blank');
+        }
+    }
+
+    function toggleStockList() {
+        const listDiv = document.getElementById('stockList');
+        listDiv.style.display = (listDiv.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // リスト生成（2つのDBをマージして表示）
+    function initStockList() {
+        const tbody = document.getElementById('stockTableBody');
+        tbody.innerHTML = '';
+        
+        // 通常の解説PDFを追加
+        addToStockList(commentaryDb, 'pdf');
+        // AI解説を追加
+        addToStockList(aiExplanationDb, 'ai');
+    }
+
+    function addToStockList(db, type) {
+        const tbody = document.getElementById('stockTableBody');
+        for (const key in db) {
+            const parts = key.split('_'); // [year, schedule, subject]
+            const row = document.createElement('tr');
+            
+            const yearCell = document.createElement('td');
+            yearCell.textContent = parts[0];
+            
+            const schedCell = document.createElement('td');
+            schedCell.textContent = scheduleNames[parts[1]] || parts[1];
+            
+            const subjCell = document.createElement('td');
+            subjCell.textContent = subjectNames[parts[2]] || parts[2];
+
+            const typeCell = document.createElement('td');
+            if(type === 'pdf') {
+                typeCell.innerHTML = '<span class="badge pdf">解説PDF</span>';
+            } else {
+                typeCell.innerHTML = '<span class="badge ai">AI解説</span>';
+            }
+
+            row.appendChild(yearCell);
+            row.appendChild(schedCell);
+            row.appendChild(subjCell);
+            row.appendChild(typeCell);
+            tbody.appendChild(row);
+        }
+    }
+
+    initStockList();
+    updateState();
+    window.addEventListener('resize', updateState);
+
+</script>
+
+</body>
+</html>
